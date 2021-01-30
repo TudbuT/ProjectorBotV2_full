@@ -62,44 +62,43 @@ public class DecoderEncoder extends Queue<byte[]> {
     
     private byte[] buildNext(int current) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        GIFEncoder encoder = null;
         try {
-            encoder = new GIFEncoder(new ImageOutputStreamImpl() {
+            GIFEncoder encoder = new GIFEncoder(new ImageOutputStreamImpl() {
                 @Override
-                public int read() throws IOException {
+                public int read() {
                     return 0;
                 }
         
                 @Override
-                public int read(byte[] bytes, int i, int i1) throws IOException {
+                public int read(byte[] bytes, int i, int i1) {
                     return 0;
                 }
         
                 @Override
-                public void write(int i) throws IOException {
+                public void write(int i) {
                     stream.write(i);
                 }
         
                 @Override
-                public void write(byte[] bytes, int i, int i1) throws IOException {
+                public void write(byte[] bytes, int i, int i1) {
                     stream.write(bytes, i, i1);
                 }
             }, BufferedImage.TYPE_USHORT_555_RGB, 1000 / fps, false);
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        for (int i = 0; i < fpi && current < frames; i++, current++) {
+            for (int i = 0; i < fpi && current < frames; i++, current++) {
+                try {
+                    encoder.addFrame(ImageIO.read(new File(dir, (current+1) + ".png")));
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+                currentID.incrementAndGet();
+            }
             try {
-                encoder.addFrame(ImageIO.read(new File(dir, (current+1) + ".png")));
+                encoder.close();
             }
             catch (IOException e) {
                 e.printStackTrace();
             }
-            currentID.incrementAndGet();
-        }
-        try {
-            encoder.close();
         }
         catch (IOException e) {
             e.printStackTrace();

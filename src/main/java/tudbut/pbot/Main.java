@@ -2,7 +2,6 @@ package tudbut.pbot;
 
 import de.tudbut.io.StreamReader;
 import de.tudbut.io.StreamWriter;
-import jdk.nashorn.internal.parser.TokenType;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -14,9 +13,11 @@ import org.jetbrains.annotations.NotNull;
 import tudbut.tools.Queue;
 import tudbut.tools.Tools2;
 
-import javax.imageio.ImageIO;
 import javax.security.auth.login.LoginException;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
