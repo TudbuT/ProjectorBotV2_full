@@ -44,7 +44,7 @@ public class Main {
                 System.out.println("Converting to raw frames...");
                 try {
                     Process p;
-                    p = Runtime.getRuntime().exec("ffmpeg -r 30 -i vid.mp4 -vf fps=fps=30,scale=240:180,setsar=1:1 vid/%0d.png");
+                    p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 -vf fps=fps=30,scale=240:180,setsar=1:1 vid/%0d.png");
                     while (p.isAlive());
                 }
                 catch (IOException e) {
