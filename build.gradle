@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+}
+
+group 'tudbut.pbot'
+version ''
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    compile("net.dv8tion:JDA:4.2.0_168")
+    compile files("./lib/TuddyLIB.jar")
+}
+
+test {
+    useJUnitPlatform()
+}
