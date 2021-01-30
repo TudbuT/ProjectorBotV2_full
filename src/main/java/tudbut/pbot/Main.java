@@ -122,6 +122,14 @@ public class Main {
                                 Member member = event.getMessage().getMember();
                                 AtomicBoolean lock = new AtomicBoolean();
                                 VoiceChannel vc = null;
+    
+                                byte[] bytes;
+                                Queue<byte[]> queue = new Queue<>();
+                                for (int i = 0; i < all.size(); i++) {
+                                    queue.add(all.get(i));
+                                }
+                                bytes = queue.next();
+                                
                                 if (member != null) {
                                     vc = member.getGuild().createVoiceChannel("VideoBot-Sound").complete();
                                     if (vc != null) {
@@ -180,12 +188,6 @@ public class Main {
                                     event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Couldn't start audio! We are in DMs!").complete();
                                 event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Starting video...").complete();
     
-                                byte[] bytes;
-                                Queue<byte[]> queue = new Queue<>();
-                                for (int i = 0; i < all.size(); i++) {
-                                    queue.add(all.get(i));
-                                }
-                                bytes = queue.next();
                                 long sa = new Date().getTime();
                                 Message message = event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Image will appear below").addFile(bytes, "generated.gif").complete();
                                 try {
