@@ -40,9 +40,9 @@ public class VideoCoder extends Queue<byte[]> {
         while (hasNext())
             super.next();
         Map<Integer, byte[]> map = new HashMap<>();
+        int j = 0;
         {
             int i = 0;
-            int j = 0;
             while (i < frames) {
                 int finalI = i;
                 int finalJ = j;
@@ -51,7 +51,7 @@ public class VideoCoder extends Queue<byte[]> {
                 j++;
             }
         }
-        while (map.size() < frames / fpi) {
+        while (map.size() < j) {
             try {
                 Thread.sleep(100);
             }
