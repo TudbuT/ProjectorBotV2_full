@@ -40,9 +40,16 @@ public class VideoCoder extends Queue<byte[]> {
         while (hasNext())
             super.next();
         Map<Integer, byte[]> map = new HashMap<>();
-        for (int i = 0; i < frames; i+=fpi) {
-            int finalI = i;
-            pool.run(() -> map.put(finalI / fpi, buildNext(finalI)));
+        {
+            int i = 0;
+            int j = 0;
+            while (i < frames) {
+                int finalI = i;
+                int finalJ = j;
+                pool.run(() -> map.put(finalJ, buildNext(finalI)));
+                i += fpi;
+                j++;
+            }
         }
         while (map.size() < frames / fpi) {
             try {
@@ -88,9 +95,7 @@ public class VideoCoder extends Queue<byte[]> {
                 try {
                     encoder.addFrame(ImageIO.read(new File(dir, (current+1) + ".png")));
                 }
-                catch (IOException e) {
-                    e.printStackTrace();
-                }
+                catch (IOException ignore) { }
                 currentID.incrementAndGet();
             }
             try {

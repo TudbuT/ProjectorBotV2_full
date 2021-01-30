@@ -129,7 +129,6 @@ public class Main {
                                 for (int i = 0; i < all.size(); i++) {
                                     queue.add(all.get(i));
                                 }
-                                bytes = queue.next();
                                 
                                 if (member != null) {
                                     vc = member.getGuild().createVoiceChannel("VideoBot-Sound").complete();
@@ -158,6 +157,8 @@ public class Main {
                                             public void trackLoaded(AudioTrack track) {
                                                 manager.setSendingHandler(new AudioCoder(player));
                                                 manager.openAudioConnection(finalVc);
+                                                while (!lock.get());
+                                                lock.set(false);
                                                 player.playTrack(track);
                                                 while (track.getState() != AudioTrackState.PLAYING);
                                                 lock.set(true);
@@ -181,7 +182,6 @@ public class Main {
                                                 finalVc.delete().queue();
                                             }
                                         });
-                                        while (!lock.get());
                                     }
                                     else
                                         event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Couldn't start audio! You are not in a VC and I couldn't create one!").complete();
@@ -190,16 +190,10 @@ public class Main {
                                     event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Couldn't start audio! We are in DMs!").complete();
                                 event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Starting video...").complete();
     
-                                long sa = new Date().getTime();
-                                Message message = event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Image will appear below").addFile(bytes, "generated.gif").complete();
-                                try {
-                                    Thread.sleep(5000 - (new Date().getTime() - sa));
-                                }
-                                catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
+                                long sa;
+                                Message message = event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Image will appear below").complete();
+                                sa = new Date().getTime();
                                 while (queue.hasNext()) {
-                                    sa = new Date().getTime();
                                     bytes = queue.next();
                                     Message n = message;
                                     if (
@@ -219,6 +213,7 @@ public class Main {
                                         ) {
                                             message = message.getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Image will appear below").addFile(bytes, "generated.gif").complete();
                                             n.delete().queue();
+                                            lock.set(true);
                                         }
                                         else {
                                             if (vc != null) {
@@ -241,6 +236,7 @@ public class Main {
                                         message.delete().queue();
                                         return;
                                     }
+                                    sa = new Date().getTime();
                                 }
                                 if (vc != null) {
                                     vc.delete().queue();
