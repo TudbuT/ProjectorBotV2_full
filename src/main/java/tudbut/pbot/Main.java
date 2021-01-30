@@ -60,8 +60,11 @@ public class Main {
                 System.out.println("Converting to raw frames...");
                 try {
                     Process p;
-                    p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 -filter:v fps=fps=30,scale=240:180,setsar=1:1 vid/%0d.png");
+                    p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 -vf fps=fps=30 vid_30fps.mp4");
                     while (p.isAlive());
+                    p = Runtime.getRuntime().exec("ffmpeg -i vid_30fps.mp4 -vf scale=240:180,setsar=1:1 vid/%0d.png");
+                    while (p.isAlive());
+                    new File("vid_30fps.mp4").delete();
                     p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 aud.opus");
                     while (p.isAlive());
                 }
@@ -115,14 +118,14 @@ public class Main {
                     else {
                         new Thread(() -> {
                             try {
-                                event.getMessage().getChannel().sendMessage("Starting up...").complete();
+                                event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Starting up...").complete();
                                 Member member = event.getMessage().getMember();
                                 AtomicBoolean lock = new AtomicBoolean();
                                 VoiceChannel vc = null;
                                 if (member != null) {
                                     vc = member.getGuild().createVoiceChannel("VideoBot-Sound").complete();
                                     if (vc != null) {
-                                        event.getMessage().getChannel().sendMessage("Starting voice emulator...").complete();
+                                        event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Starting voice emulator...").complete();
                                         AudioManager manager = event.getGuild().getAudioManager();
                                         VoiceChannel finalVc = vc;
                                         AudioEventAdapter listener = new AudioEventAdapter() {
@@ -171,11 +174,11 @@ public class Main {
                                         while (!lock.get());
                                     }
                                     else
-                                        event.getMessage().getChannel().sendMessage("Couldn't start audio! You are not in a VC and I couldn't create one!").complete();
+                                        event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Couldn't start audio! You are not in a VC and I couldn't create one!").complete();
                                 }
                                 else
-                                    event.getMessage().getChannel().sendMessage("Couldn't start audio! We are in DMs!").complete();
-                                event.getMessage().getChannel().sendMessage("Starting video...").complete();
+                                    event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Couldn't start audio! We are in DMs!").complete();
+                                event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Starting video...").complete();
     
                                 byte[] bytes;
                                 Queue<byte[]> queue = new Queue<>();
@@ -184,7 +187,7 @@ public class Main {
                                 }
                                 bytes = queue.next();
                                 long sa = new Date().getTime();
-                                Message message = event.getMessage().getChannel().sendMessage("Image will appear below").addFile(bytes, "generated.gif").complete();
+                                Message message = event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Image will appear below").addFile(bytes, "generated.gif").complete();
                                 try {
                                     Thread.sleep(5000 - (new Date().getTime() - sa));
                                 }
@@ -210,7 +213,7 @@ public class Main {
                                                         }
                                                 )
                                         ) {
-                                            message = message.getChannel().sendMessage("Image will appear below").addFile(bytes, "generated.gif").complete();
+                                            message = message.getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Image will appear below").addFile(bytes, "generated.gif").complete();
                                             n.delete().queue();
                                         }
                                         else {
@@ -241,7 +244,7 @@ public class Main {
                                 message.delete().queue();
                             } catch (PermissionException e) {
                                 try {
-                                    event.getMessage().getChannel().sendMessage("Missing permissions!");
+                                    event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Missing permissions!");
                                 } catch (PermissionException ignore) { }
                             }
                         }).start();
