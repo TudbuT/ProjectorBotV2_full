@@ -10,6 +10,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackState;
 import de.tudbut.io.StreamReader;
 import de.tudbut.io.StreamWriter;
 import net.dv8tion.jda.api.JDA;
@@ -155,10 +156,11 @@ public class Main {
                                         playerManager.loadItem(new File("aud_encoded").getAbsolutePath(), new AudioLoadResultHandler() {
                                             @Override
                                             public void trackLoaded(AudioTrack track) {
-                                                lock.set(true);
                                                 manager.setSendingHandler(new AudioCoder(player));
                                                 manager.openAudioConnection(finalVc);
                                                 player.playTrack(track);
+                                                while (track.getState() != AudioTrackState.PLAYING);
+                                                lock.set(true);
                                             }
     
                                             @Override
