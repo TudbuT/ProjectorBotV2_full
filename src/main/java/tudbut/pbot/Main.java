@@ -1,14 +1,28 @@
 package tudbut.pbot;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.event.AudioEvent;
+import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
+import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import de.tudbut.io.StreamReader;
 import de.tudbut.io.StreamWriter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.exceptions.PermissionException;
 import net.dv8tion.jda.api.hooks.EventListener;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
+import net.dv8tion.jda.api.managers.AudioManager;
 import org.jetbrains.annotations.NotNull;
 import tudbut.tools.Queue;
 import tudbut.tools.Tools2;
@@ -22,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Main {
     static volatile boolean done = false;
@@ -47,12 +62,18 @@ public class Main {
                     Process p;
                     p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 -filter:v fps=fps=30,scale=240:180,setsar=1:1 vid/%0d.png");
                     while (p.isAlive());
+                    p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 aud.opus");
+                    while (p.isAlive());
                 }
                 catch (IOException e) {
                     e.printStackTrace();
                 }
                 System.out.println("Converting to compatible frames...");
-                DecoderEncoder encoder = new DecoderEncoder(new File("vid"), 30, 5 * 30);
+                File aud = new File("aud_encoded");
+                Tools2.deleteDir(aud);
+                aud.delete();
+                new File("aud.opus").renameTo(aud);
+                VideoCoder encoder = new VideoCoder(new File("vid"), 30, 5 * 30);
                 try {
                     encoder.build();
                     while (encoder.hasNext())
@@ -93,57 +114,136 @@ public class Main {
                     }
                     else {
                         new Thread(() -> {
-                            byte[] bytes;
-                            Queue<byte[]> queue = new Queue<>();
-                            for (int i = 0; i < all.size(); i++) {
-                                queue.add(all.get(i));
-                            }
-                            bytes = queue.next();
-                            long sa = new Date().getTime();
-                            Message message = event.getMessage().getChannel().sendMessage("Image will appear below").addFile(bytes, "generated.gif").complete();
                             try {
-                                Thread.sleep(5000 - (new Date().getTime() - sa));
-                            }
-                            catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            while (queue.hasNext()) {
-                                sa = new Date().getTime();
-                                bytes = queue.next();
-                                Message n = message;
-                                if (
-                                        n.getChannel().getHistory().retrievePast(10).complete().stream().anyMatch(
-                                                msg -> msg.getIdLong() == n.getIdLong()
-                                        )
-                                ) {
-                                    if(
-                                        n.getChannel().getHistory().retrievePast(10).complete().stream().noneMatch(
-                                                msg -> {
-                                                    boolean b = msg.getContentDisplay().equalsIgnoreCase("!stop");
-                                                    if(b)
-                                                        msg.delete().queue();
-                                                    return b;
-                                                }
-                                        )
-                                    ) {
-                                        message = message.getChannel().sendMessage("Image will appear below").addFile(bytes, "generated.gif").complete();
-                                        n.delete().queue();
-                                    } else {
-                                        n.delete().complete();
-                                        return;
+                                event.getMessage().getChannel().sendMessage("Starting up...").complete();
+                                Member member = event.getMessage().getMember();
+                                AtomicBoolean lock = new AtomicBoolean();
+                                VoiceChannel vc = null;
+                                if (member != null) {
+                                    vc = member.getGuild().createVoiceChannel("VideoBot-Sound").complete();
+                                    if (vc != null) {
+                                        event.getMessage().getChannel().sendMessage("Starting voice emulator...").complete();
+                                        AudioManager manager = event.getGuild().getAudioManager();
+                                        VoiceChannel finalVc = vc;
+                                        AudioEventAdapter listener = new AudioEventAdapter() {
+                                            @Override
+                                            public void onEvent(AudioEvent event) {
+                                            
+                                            }
+    
+                                            @Override
+                                            public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
+                                                manager.closeAudioConnection();
+                                                finalVc.delete().queue();
+                                            }
+                                        };
+                                        DefaultAudioPlayerManager playerManager = new DefaultAudioPlayerManager();
+                                        AudioPlayer player = playerManager.createPlayer();
+                                        player.addListener(listener);
+                                        playerManager.registerSourceManager(new LocalAudioSourceManager());
+                                        playerManager.loadItem(new File("aud_encoded").getAbsolutePath(), new AudioLoadResultHandler() {
+                                            @Override
+                                            public void trackLoaded(AudioTrack track) {
+                                                lock.set(true);
+                                                manager.setSendingHandler(new AudioCoder(player));
+                                                manager.openAudioConnection(finalVc);
+                                                player.playTrack(track);
+                                            }
+    
+                                            @Override
+                                            public void playlistLoaded(AudioPlaylist playlist) {
+        
+                                            }
+    
+                                            @Override
+                                            public void noMatches() {
+                                                System.out.println("File not found: aud_encoded! Make sure it exists or delete vid_encoded too for it to be remade.");
+                                                manager.closeAudioConnection();
+                                                finalVc.delete().queue();
+                                            }
+    
+                                            @Override
+                                            public void loadFailed(FriendlyException exception) {
+                                                manager.closeAudioConnection();
+                                                finalVc.delete().queue();
+                                            }
+                                        });
+                                        while (!lock.get());
                                     }
-                                } else {
-                                    return;
+                                    else
+                                        event.getMessage().getChannel().sendMessage("Couldn't start audio! You are not in a VC and I couldn't create one!").complete();
                                 }
+                                else
+                                    event.getMessage().getChannel().sendMessage("Couldn't start audio! We are in DMs!").complete();
+                                event.getMessage().getChannel().sendMessage("Starting video...").complete();
+    
+                                byte[] bytes;
+                                Queue<byte[]> queue = new Queue<>();
+                                for (int i = 0; i < all.size(); i++) {
+                                    queue.add(all.get(i));
+                                }
+                                bytes = queue.next();
+                                long sa = new Date().getTime();
+                                Message message = event.getMessage().getChannel().sendMessage("Image will appear below").addFile(bytes, "generated.gif").complete();
                                 try {
                                     Thread.sleep(5000 - (new Date().getTime() - sa));
                                 }
-                                catch (Exception e) {
-                                    message.delete().queue();
-                                    return;
+                                catch (InterruptedException e) {
+                                    e.printStackTrace();
                                 }
+                                while (queue.hasNext()) {
+                                    sa = new Date().getTime();
+                                    bytes = queue.next();
+                                    Message n = message;
+                                    if (
+                                            n.getChannel().getHistory().retrievePast(10).complete().stream().anyMatch(
+                                                    msg -> msg.getIdLong() == n.getIdLong()
+                                            )
+                                    ) {
+                                        if (
+                                                n.getChannel().getHistory().retrievePast(10).complete().stream().noneMatch(
+                                                        msg -> {
+                                                            boolean b = msg.getContentDisplay().equalsIgnoreCase("!stop");
+                                                            if (b)
+                                                                msg.delete().queue();
+                                                            return b;
+                                                        }
+                                                )
+                                        ) {
+                                            message = message.getChannel().sendMessage("Image will appear below").addFile(bytes, "generated.gif").complete();
+                                            n.delete().queue();
+                                        }
+                                        else {
+                                            if (vc != null) {
+                                                vc.delete().queue();
+                                            }
+                                            n.delete().complete();
+                                            return;
+                                        }
+                                    }
+                                    else {
+                                        return;
+                                    }
+                                    try {
+                                        Thread.sleep(5000 - (new Date().getTime() - sa));
+                                    }
+                                    catch (Exception e) {
+                                        if (vc != null) {
+                                            vc.delete().queue();
+                                        }
+                                        message.delete().queue();
+                                        return;
+                                    }
+                                }
+                                if (vc != null) {
+                                    vc.delete().queue();
+                                }
+                                message.delete().queue();
+                            } catch (PermissionException e) {
+                                try {
+                                    event.getMessage().getChannel().sendMessage("Missing permissions!");
+                                } catch (PermissionException ignore) { }
                             }
-                            message.delete().queue();
                         }).start();
                     }
                 }
