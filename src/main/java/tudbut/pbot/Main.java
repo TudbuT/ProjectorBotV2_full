@@ -118,11 +118,11 @@ public class Main {
                     }
                     else {
                         new Thread(() -> {
+                            VoiceChannel vc = null;
                             try {
                                 event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Starting up...").complete();
                                 Member member = event.getMessage().getMember();
                                 AtomicBoolean lock = new AtomicBoolean();
-                                VoiceChannel vc = null;
     
                                 byte[] bytes;
                                 Queue<byte[]> queue = new Queue<>();
@@ -157,11 +157,11 @@ public class Main {
                                             public void trackLoaded(AudioTrack track) {
                                                 manager.setSendingHandler(new AudioCoder(player));
                                                 manager.openAudioConnection(finalVc);
-                                                while (!lock.get());
-                                                lock.set(false);
                                                 player.playTrack(track);
-                                                while (track.getState() != AudioTrackState.PLAYING);
-                                                lock.set(true);
+                                                while(track.getState() != AudioTrackState.PLAYING);
+                                                player.setPaused(true);
+                                                while(!lock.get());
+                                                player.setPaused(false);
                                             }
     
                                             @Override
@@ -190,6 +190,7 @@ public class Main {
                                     event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Couldn't start audio! We are in DMs!").complete();
                                 event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Starting video...").complete();
     
+                                boolean f = true;
                                 long sa;
                                 Message message = event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Image will appear below").complete();
                                 sa = new Date().getTime();
@@ -212,8 +213,12 @@ public class Main {
                                                 )
                                         ) {
                                             message = message.getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Image will appear below").addFile(bytes, "generated.gif").complete();
+                                            if(f) {
+                                                f = false;
+                                                jda.getRestPing().complete();
+                                                lock.set(true);
+                                            }
                                             n.delete().queue();
-                                            lock.set(true);
                                         }
                                         else {
                                             if (vc != null) {
@@ -229,23 +234,20 @@ public class Main {
                                     try {
                                         Thread.sleep(5000 - (new Date().getTime() - sa));
                                     }
-                                    catch (Exception e) {
-                                        if (vc != null) {
-                                            vc.delete().queue();
-                                        }
-                                        message.delete().queue();
-                                        return;
-                                    }
+                                    catch (Exception ignored) { }
                                     sa = new Date().getTime();
                                 }
                                 if (vc != null) {
                                     vc.delete().queue();
                                 }
                                 message.delete().queue();
-                            } catch (PermissionException e) {
+                            } catch (Exception e) {
                                 try {
                                     event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Missing permissions!");
-                                } catch (PermissionException ignore) { }
+                                    if (vc != null) {
+                                        vc.delete().queue();
+                                    }
+                                } catch (Exception ignore) { }
                             }
                         }).start();
                     }
