@@ -2,3 +2,5 @@
 /.gradle/
 /build/
 /build/classes/java/main/
+/aud_encoded
+/vid_encoded/

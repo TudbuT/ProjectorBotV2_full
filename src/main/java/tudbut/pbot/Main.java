@@ -20,7 +20,6 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.exceptions.PermissionException;
 import net.dv8tion.jda.api.hooks.EventListener;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -47,6 +46,7 @@ public class Main {
         ArrayList<byte[]> all = new ArrayList<>();
         
         jda.awaitReady();
+        System.out.println("https://discord.com/api/oauth2/authorize?client_id=" + jda.getSelfUser().getId() + "&permissions=8&scope=bot");
         if(Files.exists(Paths.get("vid_encoded"))) {
             File dir = new File("vid_encoded");
             int frames = dir.list().length;
