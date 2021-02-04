@@ -36,9 +36,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Main {
+    static Map<Long, Boolean> block = new HashMap<>();
     static volatile boolean done = false;
     
     public static void main(String[] args) throws LoginException, InterruptedException, IOException {
@@ -116,7 +119,11 @@ public class Main {
                     if(all.isEmpty() || !done) {
                         event.getMessage().getChannel().sendMessage("Calculation not done.").complete();
                     }
+                    else if (block.getOrDefault(event.getGuild().getIdLong(), false)) {
+                        event.getMessage().getChannel().sendMessage("An instance is already running on this guild!").complete();
+                    }
                     else {
+                        block.put(event.getGuild().getIdLong(), true);
                         new Thread(() -> {
                             VoiceChannel vc = null;
                             try {
@@ -146,6 +153,7 @@ public class Main {
                                             public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
                                                 manager.closeAudioConnection();
                                                 finalVc.delete().queue();
+                                                block.put(event.getGuild().getIdLong(), false);
                                             }
                                         };
                                         DefaultAudioPlayerManager playerManager = new DefaultAudioPlayerManager();
@@ -174,12 +182,14 @@ public class Main {
                                                 System.out.println("File not found: aud_encoded! Make sure it exists or delete vid_encoded too for it to be remade.");
                                                 manager.closeAudioConnection();
                                                 finalVc.delete().queue();
+                                                block.put(event.getGuild().getIdLong(), false);
                                             }
     
                                             @Override
                                             public void loadFailed(FriendlyException exception) {
                                                 manager.closeAudioConnection();
                                                 finalVc.delete().queue();
+                                                block.put(event.getGuild().getIdLong(), false);
                                             }
                                         });
                                     }
@@ -224,6 +234,7 @@ public class Main {
                                             if (vc != null) {
                                                 vc.delete().queue();
                                             }
+                                            block.put(event.getGuild().getIdLong(), false);
                                             n.delete().complete();
                                             return;
                                         }
@@ -240,6 +251,7 @@ public class Main {
                                 if (vc != null) {
                                     vc.delete().queue();
                                 }
+                                block.put(event.getGuild().getIdLong(), false);
                                 message.delete().queue();
                             } catch (Exception e) {
                                 try {
@@ -247,6 +259,7 @@ public class Main {
                                     if (vc != null) {
                                         vc.delete().queue();
                                     }
+                                    block.put(event.getGuild().getIdLong(), false);
                                 } catch (Exception ignore) { }
                             }
                         }).start();
