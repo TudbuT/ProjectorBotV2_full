@@ -69,17 +69,17 @@ public class Main {
                     if(!new File("vid_30fps.mp4").exists()) {
                         p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 -vf fps=fps=30 -deadline realtime vid_30fps.mp4");
                         while(p.isAlive()) {
-                            p.getOutputStream().read(bytes);
+                            p.getInputStream().read(bytes);
                         }
                     }
                     p = Runtime.getRuntime().exec("ffmpeg -i vid_30fps.mp4 -vf scale=240:180,setsar=1:1 -deadline realtime vid/%0d.png");
                     while(p.isAlive()) {
-                        p.getOutputStream().read(bytes);
+                        p.getInputStream().read(bytes);
                     }
                     new File("vid_30fps.mp4").delete();
                     p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 -deadline realtime aud.opus");
                     while(p.isAlive()) {
-                        p.getOutputStream().read(bytes);
+                        p.getInputStream().read(bytes);
                     }
                 }
                 catch (Exception e) {
