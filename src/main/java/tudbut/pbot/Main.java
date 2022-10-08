@@ -214,6 +214,7 @@ public class Main {
                                 long sa;
                                 Message message = event.getMessage().getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Image will appear below").complete();
                                 sa = new Date().getTime();
+                                long toCompensateFor = 0;
                                 while (queue.hasNext()) {
                                     bytes = queue.next();
                                     Message n = message;
@@ -232,13 +233,15 @@ public class Main {
                                                         }
                                                 )
                                         ) {
-                                            message = message.getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Image will appear below").addFile(bytes, "generated.gif").complete();
+                                            message = message.getChannel().sendMessage("*<VideoBot by TudbuT#2624>* Image will appear below [toCompensateFor=" + toCompensateFor + "]").addFile(bytes, "generated.gif").complete();
+                                            n.delete().queue();
                                             if(f) {
                                                 f = false;
-                                                jda.getRestPing().complete();
+                                                try {
+                                                    Thread.sleep((long) ((new Date().getTime() - sa) / 5.5)); // The discord API usually has better speed than the user upload speed.
+                                                } catch(Exception ignored) { }
                                                 lock.set(true);
                                             }
-                                            n.delete().queue();
                                         }
                                         else {
                                             if (vc != null) {
@@ -252,10 +255,28 @@ public class Main {
                                     else {
                                         return;
                                     }
-                                    try {
-                                        Thread.sleep(5000 - (new Date().getTime() - sa));
+                                    long toSleep = 5000 - (new Date().getTime() - sa);
+                                    calc: {
+                                        if(toSleep < 0) {
+                                            toCompensateFor += -toSleep;
+                                            break calc;
+                                        }
+                                        if(toCompensateFor > 0) {
+                                            if(toSleep - toCompensateFor >= 0) {
+                                                toSleep -= toCompensateFor;
+                                                toCompensateFor = 0;
+                                            }
+                                            else {
+                                                toCompensateFor -= toSleep;
+                                                toSleep = 0;
+                                            }
+                                            break calc;
+                                        }
                                     }
-                                    catch (Exception ignored) { }
+                                    try {
+                                        Thread.sleep(toSleep);
+                                    }
+                                    catch (Exception ignored) {}
                                     sa = new Date().getTime();
                                 }
                                 if (vc != null) {
