@@ -63,16 +63,24 @@ public class Main {
                 new File("vid").mkdir();
                 System.out.println("Converting to raw frames...");
                 try {
+                    // sadly we need to read the stream for the process to continue running.
+                    byte[] bytes = new byte[4096];
                     Process p;
                     if(!new File("vid_30fps.mp4").exists()) {
                         p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 -vf fps=fps=30 -deadline realtime vid_30fps.mp4");
-                        p.waitFor();
+                        while(p.isAlive()) {
+                            p.getOutputStream().read(bytes);
+                        }
                     }
                     p = Runtime.getRuntime().exec("ffmpeg -i vid_30fps.mp4 -vf scale=240:180,setsar=1:1 -deadline realtime vid/%0d.png");
-                    p.waitFor();
+                    while(p.isAlive()) {
+                        p.getOutputStream().read(bytes);
+                    }
                     new File("vid_30fps.mp4").delete();
                     p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 -deadline realtime aud.opus");
-                    p.waitFor();
+                    while(p.isAlive()) {
+                        p.getOutputStream().read(bytes);
+                    }
                 }
                 catch (Exception e) {
                     e.printStackTrace();
