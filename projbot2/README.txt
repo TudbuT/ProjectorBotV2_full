@@ -40,6 +40,8 @@ How to change the video:
 Help:
 
  - TudbuT#2624 on Discord
+ - The previous version had broken encoding and sometimes took hours without finishing.
+   Sorry about that, it's fixed now.
 
 
 
