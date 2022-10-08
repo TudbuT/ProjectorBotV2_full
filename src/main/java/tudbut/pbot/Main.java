@@ -64,15 +64,17 @@ public class Main {
                 System.out.println("Converting to raw frames...");
                 try {
                     Process p;
-                    p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 -vf fps=fps=30 vid_30fps.mp4");
-                    while (p.isAlive());
-                    p = Runtime.getRuntime().exec("ffmpeg -i vid_30fps.mp4 -vf scale=240:180,setsar=1:1 vid/%0d.png");
-                    while (p.isAlive());
+                    if(!new File("vid_30fps.mp4").exists()) {
+                        p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 -vf fps=fps=30 -deadline realtime vid_30fps.mp4");
+                        p.waitFor();
+                    }
+                    p = Runtime.getRuntime().exec("ffmpeg -i vid_30fps.mp4 -vf scale=240:180,setsar=1:1 -deadline realtime vid/%0d.png");
+                    p.waitFor();
                     new File("vid_30fps.mp4").delete();
-                    p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 aud.opus");
-                    while (p.isAlive());
+                    p = Runtime.getRuntime().exec("ffmpeg -i vid.mp4 -deadline realtime aud.opus");
+                    p.waitFor();
                 }
-                catch (IOException e) {
+                catch (Exception e) {
                     e.printStackTrace();
                 }
                 System.out.println("Converting to compatible frames...");
